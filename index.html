@@ -442,28 +442,43 @@ async function loadDashboard() {
 }
 
 function applyFilter() {
-  const tglMulai = document.getElementById('filterMulai').value;
-  const tglSelesai = document.getElementById('filterSelesai').value;
+  const thn = document.getElementById('filterTahun').value; // Ambil tahun dari dropdown
   const pkmSelected = document.getElementById('filterPkm').value;
   
   let filtered = allDashboardData;
   
+  // 1. FILTER TAHUN (Berdasarkan angka di kolom 'tahun')
+  if (thn) {
+    filtered = filtered.filter(item => String(item.tahun) === String(thn));
+  }
+
+  // 2. FILTER PUSKESMAS
   if (pkmSelected) {
     filtered = filtered.filter(item => item.puskesmas === pkmSelected);
   }
 
-  if (tglMulai || tglSelesai) {
-    filtered = filtered.filter(item => {
-      const parts = String(item.tanggal).split(' ');
-      if (parts.length !== 3) return true;
-      const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
-      const itemDate = new Date(parts[2], blnMap[parts[1]], parseInt(parts[0]));
-      
-      if (tglMulai && itemDate < new Date(tglMulai)) return false;
-      if (tglSelesai && itemDate > new Date(tglSelesai)) return false;
-      return true;
-    });
-  }
+  // 3. LOGIKA GRAFIK (Berdasarkan data yang sudah difilter tahunnya)
+  const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+  const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
+  
+  filtered.forEach(item => {
+    // Kita cari nama bulannya dari teks tanggal (untuk grafik)
+    const parts = String(item.tanggal).split(' ');
+    for (let i = 0; i < parts.length; i++) {
+      if (blnMap[parts[i]] !== undefined) {
+        dataBulanan[blnMap[parts[i]]]++;
+        break;
+      }
+    }
+  });
+
+  gambarGrafik(dataBulanan);
+
+  // Simpan hasil filter ke variabel global untuk paginasi
+  window.currentFilteredData = filtered;
+  currentPage = 1; // Reset ke halaman 1 setiap filter
+  renderTable();
+}
 
   // Logika Grafik
   const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
