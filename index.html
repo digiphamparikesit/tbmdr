@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TBMDR System</title>
+<!-- Tambahan Library Chart.js untuk Grafik -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root { --primary:#1a73e8; --bg:#f5f7fb; --border:#dadce0; --text:#202124; --sidebar-bg:#202124; --sidebar-text:#e8eaed; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -79,7 +81,10 @@
       <fieldset>
         <legend>Data Surat</legend>
         <div class="grid-3">
-          <div><label>Nomor Surat</label><input type="text" name="nomor_surat" required placeholder="mis. 314"></div>
+          <div>
+            <label>Nomor Surat (Otomatis)</label>
+            <input type="number" name="nomor_surat" id="inputNomor" required placeholder="Memuat...">
+          </div>
           <div>
             <label>Bulan (Romawi)</label>
             <select name="bulan" required>
@@ -110,7 +115,6 @@
           </div>
           <div>
             <label>Nama Puskesmas</label>
-            <!-- Gunakan datalist untuk autocomplete -->
             <input type="text" name="nama_puskesmas" list="list-puskesmas" required placeholder="Ketik atau pilih...">
             <datalist id="list-puskesmas"></datalist>
           </div>
@@ -133,6 +137,11 @@
     <h1>Dashboard Data TBMDR</h1>
     <p class="sub">Data ditarik langsung dari Google Sheets.</p>
 
+    <!-- Grafik Garis -->
+    <div style="background:#fff; border:1px solid #dadce0; border-radius:8px; padding:20px; margin-bottom:24px;">
+      <canvas id="grafikTbmdr" style="max-height: 300px;"></canvas>
+    </div>
+
     <div class="filter-bar">
       <div>
         <label>Filter Tahun</label>
@@ -142,6 +151,12 @@
           <option value="2025">2025</option>
           <option value="2024">2024</option>
           <option value="2023">2023</option>
+        </select>
+      </div>
+      <div>
+        <label>Filter Puskesmas</label>
+        <select id="filterPkm">
+          <option value="">Semua Puskesmas</option>
         </select>
       </div>
       <div>
@@ -180,13 +195,15 @@
 // ============================================================
 // KONFIGURASI
 // ============================================================
+// PASTIKAN URL INI SESUAI DENGAN URL DEPLOYMENT TERBARU ANDA
 const API_URL    = 'https://script.google.com/macros/s/AKfycbwYAgHGusurFPVEIJcDklxGX545fk7likze4NpBX-8gCB51ri0TnVmXIRih3AMY2E1i/exec';
 const SECRET_KEY = 'eC5XHr4fWth3y6IowWrtBW9ypnQQMZQaeY9rNu063ZDj0y3y';
 
-let masterObat = []; // Menyimpan daftar obat dari GS
+let masterObat = []; 
+let myChart = null; 
 
 // ============================================================
-// TAB SWITCHING
+// TAB SWITCHING & INIT
 // ============================================================
 function switchTab(tab) {
   document.getElementById('tab-form').style.display = tab === 'form' ? 'block' : 'none';
@@ -199,22 +216,37 @@ function switchTab(tab) {
 }
 
 // ============================================================
-// AMBIL MASTER DATA (Puskesmas & Obat) DARI GS
+// AMBIL DATA MASTER (Puskesmas, Obat, Nomor Otomatis)
 // ============================================================
 async function loadMasterData() {
   try {
     const res = await fetch(API_URL + '?action=master');
     const data = await res.json();
     
-    // 1. Isi Datalist Puskesmas
     const listPkm = document.getElementById('list-puskesmas');
-    listPkm.innerHTML = data.puskesmas.map(p => `<option value="${p}">`).join('');
+    if (listPkm) listPkm.innerHTML = data.puskesmas.map(p => `<option value="${p}">`).join('');
     
-    // 2. Simpan Master Obat untuk Autocomplete
-    masterObat = data.obat;
+    masterObat = data.obat || [];
     
+    const filterPkm = document.getElementById('filterPkm');
+    if (filterPkm) {
+      filterPkm.innerHTML = '<option value="">Semua Puskesmas</option>' + 
+        data.puskesmas.map(p => `<option value="${p}">${p}</option>`).join('');
+    }
   } catch (e) {
     console.error('Gagal load master data', e);
+  }
+}
+
+async function loadNextNomor() {
+  const inputNomor = document.getElementById('inputNomor');
+  inputNomor.placeholder = 'Memuat...';
+  try {
+    const res = await fetch(API_URL + '?action=next_nomor');
+    const data = await res.json();
+    inputNomor.value = data.next;
+  } catch (e) {
+    inputNomor.placeholder = 'Isi manual';
   }
 }
 
@@ -256,9 +288,10 @@ document.getElementById('btnAdd').onclick = () => {
   buatBarisObat();
 };
 
-// Inisialisasi form awal
+// Inisialisasi awal
 buatBarisObat(); buatBarisObat();
-loadMasterData(); // Panggil master data saat halaman dibuka
+loadMasterData();
+loadNextNomor();
 
 // Submit Form
 document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
@@ -303,7 +336,8 @@ document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
         (json.pdf_url ? `<br><a href="${json.pdf_url}" target="_blank">Buka PDF</a>` : '');
       e.target.reset();
       container.innerHTML = ''; buatBarisObat(); buatBarisObat();
-      loadMasterData(); // Refresh data master
+      loadMasterData(); 
+      loadNextNomor(); // Ambil nomor otomatis berikutnya
     } else {
       throw new Error(json.error || 'Gagal');
     }
@@ -316,7 +350,7 @@ document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
 });
 
 // ============================================================
-// DASHBOARD LOGIC
+// DASHBOARD LOGIC & GRAFIK
 // ============================================================
 async function loadDashboard() {
   const tbody = document.getElementById('dashBody');
@@ -328,17 +362,20 @@ async function loadDashboard() {
     const res = await fetch(API_URL + '?action=dashboard&tahun=' + thn);
     const data = await res.json();
     
-    // Filter Tanggal di sisi Client (lebih mudah & cepat)
     const tglMulai = document.getElementById('filterMulai').value;
     const tglSelesai = document.getElementById('filterSelesai').value;
+    const pkmSelected = document.getElementById('filterPkm').value;
     
     let filtered = data;
+    
+    if (pkmSelected) {
+      filtered = filtered.filter(item => item.puskesmas === pkmSelected);
+    }
+
     if (tglMulai || tglSelesai) {
-      filtered = data.filter(item => {
-        // Parse format tanggal "18 September 2026" menjadi Date object
+      filtered = filtered.filter(item => {
         const parts = String(item.tanggal).split(' ');
-        if (parts.length !== 3) return true; // Skip jika format aneh
-        
+        if (parts.length !== 3) return true;
         const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
         const itemDate = new Date(parts[2], blnMap[parts[1]], parseInt(parts[0]));
         
@@ -347,6 +384,20 @@ async function loadDashboard() {
         return true;
       });
     }
+
+    // --- LOGIKA UNTUK GRAFIK ---
+    const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+    const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
+    
+    filtered.forEach(item => {
+      const parts = String(item.tanggal).split(' ');
+      if (parts.length === 3 && blnMap[parts[1]] !== undefined) {
+        dataBulanan[blnMap[parts[1]]]++;
+      }
+    });
+
+    gambarGrafik(dataBulanan);
+    // ---------------------------
 
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data ditemukan.</td></tr>';
@@ -370,12 +421,40 @@ async function loadDashboard() {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${e.message}</td></tr>`;
   }
 }
+
+function gambarGrafik(dataArray) {
+  const ctx = document.getElementById('grafikTbmdr').getContext('2d');
+  if (myChart) myChart.destroy();
+
+  myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+      datasets: [{
+        label: 'Jumlah Surat TBMDR',
+        data: dataArray,
+        borderColor: '#1a73e8',
+        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+        borderWidth: 2,
+        pointBackgroundColor: '#1a73e8',
+        pointRadius: 4,
+        fill: true,
+        tension: 0.3 
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
 </script>
 
 <!-- Datalist untuk Obat (di-generate via JS) -->
 <datalist id="list-obat"></datalist>
 <script>
-  // Observer untuk mengisi datalist obat secara otomatis
   const observer = new MutationObserver(() => {
     const listObat = document.getElementById('list-obat');
     if (masterObat.length > 0 && listObat.children.length !== masterObat.length) {
