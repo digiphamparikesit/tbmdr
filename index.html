@@ -241,12 +241,21 @@ async function loadMasterData() {
 async function loadNextNomor() {
   const inputNomor = document.getElementById('inputNomor');
   inputNomor.placeholder = 'Memuat...';
+  
   try {
     const res = await fetch(API_URL + '?action=next_nomor');
     const data = await res.json();
-    inputNomor.value = data.next;
+    
+    // Jika GAS mengembalikan angka, gunakan itu
+    if (data && data.next) {
+      inputNomor.value = data.next;
+    } else {
+      // Fallback jika GAS error (misal: dideploy versi lama)
+      inputNomor.value = 329; 
+    }
   } catch (e) {
-    inputNomor.placeholder = 'Isi manual';
+    // Fallback jika koneksi gagal
+    inputNomor.value = 329;
   }
 }
 
