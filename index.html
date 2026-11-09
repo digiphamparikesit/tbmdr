@@ -10,16 +10,30 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family:'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); display: flex; min-height: 100vh; }
   
-  .sidebar { width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); padding: 20px 0; display: flex; flex-direction: column; }
+  /* === SIDEBAR STICKY === */
+  .sidebar { 
+    width: 260px; 
+    background: var(--sidebar-bg); 
+    color: var(--sidebar-text); 
+    padding: 20px 0; 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    position: sticky; 
+    top: 0; 
+    overflow-y: auto; 
+  }
   .sidebar h2 { font-size: 18px; text-align: center; margin-bottom: 20px; color: #fff; border-bottom: 1px solid #3c4043; padding-bottom: 15px; }
   .sidebar a { padding: 15px 20px; text-decoration: none; color: var(--sidebar-text); font-size: 14px; cursor: pointer; display: block; transition: 0.2s; }
   .sidebar a:hover, .sidebar a.active { background: #3c4043; color: #fff; border-left: 4px solid var(--primary); }
   
-  .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+  /* === MAIN CONTENT === */
+  .main-content { flex: 1; padding: 32px; height: 100vh; overflow-y: auto; }
   .container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08); padding: 32px; }
   h1 { font-size: 22px; margin: 0 0 4px; }
   .sub { color: #5f6368; font-size: 14px; margin-bottom: 24px; }
   
+  /* === FORM STYLES === */
   fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
   legend { font-weight: 600; padding: 0 6px; color: var(--primary); }
   label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
@@ -36,7 +50,21 @@
   .msg.ok { background: #e6f4ea; color: #137333; display: block; }
   .msg.err { background: #fce8e6; color: #c5221f; display: block; }
   
-  .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: flex-end; }
+  /* === DASHBOARD STYLES === */
+  .filter-bar { 
+    display: flex; 
+    gap: 12px; 
+    margin-bottom: 20px; 
+    align-items: flex-end; 
+    background: #fff; 
+    padding: 16px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    border: 1px solid var(--border);
+  }
   .filter-bar > div { flex: 1; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
@@ -44,15 +72,21 @@
   tr:hover { background: #f1f3f4; }
   .btn-pdf { background: #e6f4ea; color: #137333; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 12px; display:inline-block; }
   .btn-refresh { background: #34a853; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  
+  /* === PAGINATION STYLES === */
+  .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+  .pagination button { padding: 8px 12px; border: 1px solid var(--border); background: #fff; cursor: pointer; border-radius: 4px; }
+  .pagination button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .pagination button:disabled { background: #f1f3f4; cursor: not-allowed; color: #999; }
 
   @media (max-width: 768px) {
     body { flex-direction: column; }
-    .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 0; }
+    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; overflow-x: auto; padding: 0; }
     .sidebar h2 { display: none; }
     .sidebar a { padding: 15px; flex: 1; text-align: center; border-bottom: 3px solid transparent; border-left: none; }
     .sidebar a.active { border-bottom-color: var(--primary); }
     .grid, .grid-3 { grid-template-columns: 1fr; }
-    .filter-bar { flex-direction: column; align-items: stretch; }
+    .filter-bar { flex-direction: column; align-items: stretch; position: relative; }
   }
 </style>
 </head>
@@ -137,6 +171,7 @@
       <canvas id="grafikTbmdr" style="max-height: 300px;"></canvas>
     </div>
 
+    <!-- Filter Bar Sticky -->
     <div class="filter-bar">
       <div>
         <label>Filter Tahun</label>
@@ -163,7 +198,7 @@
         <input type="date" id="filterSelesai">
       </div>
       <div>
-        <button class="submit" style="padding:10px;" onclick="loadDashboard()">Terapkan Filter</button>
+        <button class="submit" style="padding:10px;" onclick="applyFilter()">Terapkan Filter</button>
       </div>
       <div>
         <button class="btn-refresh" onclick="loadDashboard()">🔄 Refresh Data</button>
@@ -185,6 +220,9 @@
         <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
       </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <div class="pagination" id="pagination"></div>
   </div>
 
 </div>
@@ -193,12 +231,14 @@
 // ============================================================
 // KONFIGURASI
 // ============================================================
-// PASTIKAN URL INI SESUAI DENGAN URL DEPLOYMENT TERBARU ANDA
 const API_URL    = 'https://script.google.com/macros/s/AKfycbytkxqUNJUYVAe9Gj5su-gC4KL8KuG8HqmzT6MW7o94lrzylz0TqdqVrgcRl_pNbpAI/exec';
 const SECRET_KEY = 'eC5XHr4fWth3y6IowWrtBW9ypnQQMZQaeY9rNu063ZDj0y3y';
 
 let masterObat = []; 
 let myChart = null; 
+let allDashboardData = []; // Menyimpan semua data mentah untuk filter & paginasi
+let currentPage = 1;
+const rowsPerPage = 10;
 
 // ============================================================
 // TAB SWITCHING & INIT
@@ -356,7 +396,7 @@ document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
 });
 
 // ============================================================
-// DASHBOARD LOGIC & GRAFIK
+// DASHBOARD LOGIC & GRAFIK & PAGINATION
 // ============================================================
 async function loadDashboard() {
   const tbody = document.getElementById('dashBody');
@@ -366,68 +406,119 @@ async function loadDashboard() {
   
   try {
     const res = await fetch(API_URL + '?action=dashboard&tahun=' + thn);
-    const data = await res.json();
-    
-    const tglMulai = document.getElementById('filterMulai').value;
-    const tglSelesai = document.getElementById('filterSelesai').value;
-    const pkmSelected = document.getElementById('filterPkm').value;
-    
-    let filtered = data;
-    
-    if (pkmSelected) {
-      filtered = filtered.filter(item => item.puskesmas === pkmSelected);
-    }
-
-    if (tglMulai || tglSelesai) {
-      filtered = filtered.filter(item => {
-        const parts = String(item.tanggal).split(' ');
-        if (parts.length !== 3) return true;
-        const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
-        const itemDate = new Date(parts[2], blnMap[parts[1]], parseInt(parts[0]));
-        
-        if (tglMulai && itemDate < new Date(tglMulai)) return false;
-        if (tglSelesai && itemDate > new Date(tglSelesai)) return false;
-        return true;
-      });
-    }
-
-    // LOGIKA UNTUK GRAFIK
-    const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
-    const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
-    
-    filtered.forEach(item => {
-      const parts = String(item.tanggal).split(' ');
-      if (parts.length === 3 && blnMap[parts[1]] !== undefined) {
-        dataBulanan[blnMap[parts[1]]]++;
-      }
-    });
-
-    gambarGrafik(dataBulanan);
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data ditemukan.</td></tr>';
-      return;
-    }
-
-    // UPDATE TAMPILAN TABEL & LINK PDF
-    tbody.innerHTML = filtered.map(item => `
-      <tr>
-        <td><b>${item.nomor}</b></td>
-        <td>${item.tanggal}</td>
-        <td>${item.pasien}</td>
-        <td>${item.puskesmas}</td>
-        <td>${item.sheet}</td>
-        <td>
-          ${item.pdfUrl && item.pdfUrl.trim() !== '' 
-            ? `<a href="${item.pdfUrl}" target="_blank" class="btn-pdf">Lihat PDF</a>` 
-            : `<span style="color:#f29900; font-size:12px; font-weight:bold;">⏳ AutoCrat memproses...</span>`}
-        </td>
-      </tr>
-    `).join('');
-
+    allDashboardData = await res.json(); // Simpan data mentah
+    applyFilter(); // Terapkan filter & render tabel
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${e.message}</td></tr>`;
   }
+}
+
+function applyFilter() {
+  const tglMulai = document.getElementById('filterMulai').value;
+  const tglSelesai = document.getElementById('filterSelesai').value;
+  const pkmSelected = document.getElementById('filterPkm').value;
+  
+  let filtered = allDashboardData;
+  
+  if (pkmSelected) {
+    filtered = filtered.filter(item => item.puskesmas === pkmSelected);
+  }
+
+  if (tglMulai || tglSelesai) {
+    filtered = filtered.filter(item => {
+      const parts = String(item.tanggal).split(' ');
+      if (parts.length !== 3) return true;
+      const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
+      const itemDate = new Date(parts[2], blnMap[parts[1]], parseInt(parts[0]));
+      
+      if (tglMulai && itemDate < new Date(tglMulai)) return false;
+      if (tglSelesai && itemDate > new Date(tglSelesai)) return false;
+      return true;
+    });
+  }
+
+  // Logika Grafik
+  const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+  const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
+  
+  filtered.forEach(item => {
+    const parts = String(item.tanggal).split(' ');
+    if (parts.length === 3 && blnMap[parts[1]] !== undefined) {
+      dataBulanan[blnMap[parts[1]]]++;
+    }
+  });
+
+  gambarGrafik(dataBulanan);
+
+  // Simpan hasil filter ke variabel global untuk paginasi
+  window.currentFilteredData = filtered;
+  currentPage = 1; // Reset ke halaman 1 setiap filter
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('dashBody');
+  const filtered = window.currentFilteredData || [];
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data ditemukan.</td></tr>';
+    renderPagination(0);
+    return;
+  }
+
+  // Hitung indeks awal dan akhir
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filtered.length);
+  
+  const pageData = filtered.slice(startIndex, endIndex);
+
+  tbody.innerHTML = pageData.map(item => `
+    <tr>
+      <td><b>${item.nomor}</b></td>
+      <td>${item.tanggal}</td>
+      <td>${item.pasien}</td>
+      <td>${item.puskesmas}</td>
+      <td>${item.sheet}</td>
+      <td>
+        ${item.pdfUrl && item.pdfUrl.trim() !== '' 
+          ? `<a href="${item.pdfUrl}" target="_blank" class="btn-pdf">Lihat PDF</a>` 
+          : `<span style="color:#f29900; font-size:12px; font-weight:bold;">⏳ AutoCrat memproses...</span>`}
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination(filtered.length);
+}
+
+function renderPagination(totalItems) {
+  const paginationDiv = document.getElementById('pagination');
+  paginationDiv.innerHTML = '';
+  
+  const totalPages = Math.ceil(totalItems / rowsPerPage);
+  if (totalPages <= 1) return; // Sembunyikan jika hanya 1 halaman
+
+  // Tombol Previous
+  const btnPrev = document.createElement('button');
+  btnPrev.textContent = '«';
+  btnPrev.disabled = currentPage === 1;
+  btnPrev.onclick = () => { currentPage--; renderTable(); };
+  paginationDiv.appendChild(btnPrev);
+
+  // Tombol Angka
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    if (i === currentPage) btn.className = 'active';
+    btn.onclick = () => { currentPage = i; renderTable(); };
+    paginationDiv.appendChild(btn);
+  }
+
+  // Tombol Next
+  const btnNext = document.createElement('button');
+  btnNext.textContent = '»';
+  btnNext.disabled = currentPage === totalPages;
+  btnNext.onclick = () => { currentPage++; renderTable(); };
+  paginationDiv.appendChild(btnNext);
 }
 
 function gambarGrafik(dataArray) {
