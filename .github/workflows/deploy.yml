@@ -20,14 +20,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-       - name: Generate config.js
+      - name: Generate config.js
         run: |
           echo "window.TBMDR_CONFIG = {" > config.js
           echo "  API_URL: '${{ secrets.TBMDR_API_URL }}'," >> config.js
           echo "  SECRET_KEY: '${{ secrets.TBMDR_SECRET_KEY }}'" >> config.js
           echo "};" >> config.js
-          };
-          EOF
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
