@@ -346,7 +346,11 @@ document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
       e.target.reset();
       container.innerHTML = ''; buatBarisObat(); buatBarisObat();
       loadMasterData(); 
-      loadNextNomor(); // Ambil nomor otomatis berikutnya
+      
+       // Tunggu 3 detik agar Google Sheets selesai menyimpan data sebelum meminta nomor baru
+      setTimeout(() => {
+        loadNextNomor();
+      }, 3000);
     } else {
       throw new Error(json.error || 'Gagal');
     }
