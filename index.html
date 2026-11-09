@@ -74,7 +74,6 @@
   .btn-refresh { background: #34a853; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
   
   /* === PAGINATION STYLES === */
-  /* === PAGINATION STYLES === */
   .pagination-container {
     display: flex;
     justify-content: space-between;
@@ -85,30 +84,23 @@
     border-radius: 8px;
     border: 1px solid var(--border);
   }
-  .pagination-info {
-    font-size: 14px;
-    color: #5f6368;
-  }
-  .pagination-buttons {
-    display: flex;
-    gap: 8px;
-  }
+  .pagination-info { font-size: 14px; color: #5f6368; }
+  .pagination-buttons { display: flex; gap: 8px; }
   .pagination-buttons button {
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    background: #fff;
-    cursor: pointer;
-    border-radius: 4px;
-    font-weight: 600;
-    color: var(--text);
+    padding: 8px 16px; border: 1px solid var(--border); background: #fff;
+    cursor: pointer; border-radius: 4px; font-weight: 600; color: var(--text);
   }
-  .pagination-buttons button:hover:not(:disabled) {
-    background: #f1f3f4;
-  }
-  .pagination-buttons button:disabled {
-    background: #f8f9fa;
-    color: #ccc;
-    cursor: not-allowed;
+  .pagination-buttons button:hover:not(:disabled) { background: #f1f3f4; }
+  .pagination-buttons button:disabled { background: #f8f9fa; color: #ccc; cursor: not-allowed; }
+
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; overflow-x: auto; padding: 0; }
+    .sidebar h2 { display: none; }
+    .sidebar a { padding: 15px; flex: 1; text-align: center; border-bottom: 3px solid transparent; border-left: none; }
+    .sidebar a.active { border-bottom-color: var(--primary); }
+    .grid, .grid-3 { grid-template-columns: 1fr; }
+    .filter-bar { flex-direction: column; align-items: stretch; position: relative; }
   }
 </style>
 </head>
@@ -264,7 +256,7 @@ const SECRET_KEY = 'eC5XHr4fWth3y6IowWrtBW9ypnQQMZQaeY9rNu063ZDj0y3y';
 
 let masterObat = []; 
 let myChart = null; 
-let allDashboardData = []; // Menyimpan semua data mentah untuk filter & paginasi
+let allDashboardData = [];
 let currentPage = 1;
 const rowsPerPage = 10;
 
@@ -430,24 +422,22 @@ async function loadDashboard() {
   const tbody = document.getElementById('dashBody');
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>';
   
-  const thn = document.getElementById('filterTahun').value;
-  
   try {
-    const res = await fetch(API_URL + '?action=dashboard&tahun=' + thn);
-    allDashboardData = await res.json(); // Simpan data mentah
-    applyFilter(); // Terapkan filter & render tabel
+    const res = await fetch(API_URL + '?action=dashboard&tahun='); // Ambil semua data dulu
+    allDashboardData = await res.json(); 
+    applyFilter(); // Terapkan filter awal
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${e.message}</td></tr>`;
   }
 }
 
 function applyFilter() {
-  const thn = document.getElementById('filterTahun').value; // Ambil tahun dari dropdown
+  const thn = document.getElementById('filterTahun').value; 
   const pkmSelected = document.getElementById('filterPkm').value;
   
   let filtered = allDashboardData;
   
-  // 1. FILTER TAHUN (Berdasarkan angka di kolom 'tahun')
+  // 1. FILTER TAHUN
   if (thn) {
     filtered = filtered.filter(item => String(item.tahun) === String(thn));
   }
@@ -457,12 +447,11 @@ function applyFilter() {
     filtered = filtered.filter(item => item.puskesmas === pkmSelected);
   }
 
-  // 3. LOGIKA GRAFIK (Berdasarkan data yang sudah difilter tahunnya)
+  // 3. LOGIKA GRAFIK (Berdasarkan data yang sudah difilter)
   const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
   const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
   
   filtered.forEach(item => {
-    // Kita cari nama bulannya dari teks tanggal (untuk grafik)
     const parts = String(item.tanggal).split(' ');
     for (let i = 0; i < parts.length; i++) {
       if (blnMap[parts[i]] !== undefined) {
@@ -474,28 +463,8 @@ function applyFilter() {
 
   gambarGrafik(dataBulanan);
 
-  // Simpan hasil filter ke variabel global untuk paginasi
   window.currentFilteredData = filtered;
-  currentPage = 1; // Reset ke halaman 1 setiap filter
-  renderTable();
-}
-
-  // Logika Grafik
-  const dataBulanan = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
-  const blnMap = { 'Januari':0, 'Februari':1, 'Maret':2, 'April':3, 'Mei':4, 'Juni':5, 'Juli':6, 'Agustus':7, 'September':8, 'Oktober':9, 'November':10, 'Desember':11 };
-  
-  filtered.forEach(item => {
-    const parts = String(item.tanggal).split(' ');
-    if (parts.length === 3 && blnMap[parts[1]] !== undefined) {
-      dataBulanan[blnMap[parts[1]]]++;
-    }
-  });
-
-  gambarGrafik(dataBulanan);
-
-  // Simpan hasil filter ke variabel global untuk paginasi
-  window.currentFilteredData = filtered;
-  currentPage = 1; // Reset ke halaman 1 setiap filter
+  currentPage = 1; 
   renderTable();
 }
 
@@ -509,10 +478,8 @@ function renderTable() {
     return;
   }
 
-  // Hitung indeks awal dan akhir
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, filtered.length);
-  
   const pageData = filtered.slice(startIndex, endIndex);
 
   tbody.innerHTML = pageData.map(item => `
@@ -561,8 +528,6 @@ function changePage(direction) {
   if (newPage >= 1 && newPage <= totalPages) {
     currentPage = newPage;
     renderTable();
-    
-    // Scroll ke atas tabel secara halus saat ganti halaman
     document.querySelector('table').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
