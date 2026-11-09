@@ -1,0 +1,329 @@
+// ============================================================
+// KONFIGURASI
+// ============================================================
+const SPREADSHEET_ID = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
+const FOLDER_ID      = '1IJ1JGYt5TceUbPVui8Fxun2mQF0cGomb'; // folder PDF
+const SECRET_KEY     = 'GANTI_DENGAN_SECRET_RANDOM_PANJANG';
+
+// === KOP SURAT ===
+// ID file gambar kop di Google Drive (gambar PNG/JPG).
+// Pastikan file di-share "Anyone with the link" agar bisa di-fetch server-side.
+const KOP_IMAGE_FILE_ID = 'GANTI_ID_GAMBAR_KOP_DI_DRIVE';
+
+// Teks judul di bawah kop (jika tidak pakai gambar kop, isi teks ini)
+const JUDUL_SURAT   = 'SURAT PERMINTAAN OBAT TBMDR';
+const SUBJUDUL      = 'RUMAH SAKIT UMUM DAERAH TENGGARONG';
+
+// === EMAIL (OPSIONAL) ===
+// Karena form input tidak lagi minta email, isi alamat penerima tetap di sini.
+// Kosongkan string '' jika TIDAK ingin kirim email sama sekali.
+const EMAIL_TO_FIXED = 'ifrsparikesit@gmail.com'; // ganti sesuai kebutuhan
+const SEND_EMAIL     = true;                      // false = tidak kirim email
+
+// ============================================================
+// HEADER PER SHEET TB (sama seperti sebelumnya)
+// ============================================================
+const TB_HEADERS = {
+  2:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 2','Merged Doc URL - TB 2','Link to merged Doc - TB 2','Document Merge Status - TB 2'],
+  3:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 3','Merged Doc URL - TB 3','Link to merged Doc - TB 3','Document Merge Status - TB 3'],
+  4:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 4','Merged Doc URL - TB 4','Link to merged Doc - TB 4','Document Merge Status - TB 4'],
+  5:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4','nama obat 5','jumlah obat 5',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 5','Merged Doc URL - TB 5','Link to merged Doc - TB 5','Document Merge Status - TB 5'],
+  6:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4','nama obat 5','jumlah obat 5','nama obat 6','jumlah obat 6',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 6','Merged Doc URL - TB 6','Link to merged Doc - TB 6','Document Merge Status - TB 6'],
+  7:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4','nama obat 5','jumlah obat 5','nama obat 6','jumlah obat 6',
+       'nama obat 7','jumlah obat 7',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 7','Merged Doc URL - TB 7','Link to merged Doc - TB 7','Document Merge Status - TB 7'],
+  8:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4','nama obat 5','jumlah obat 5','nama obat 6','jumlah obat 6',
+       'nama obat 7','jumlah obat 7','nama obat 8','jumlah obat 8',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 8','Merged Doc URL - TB 8','Link to merged Doc - TB 8','Document Merge Status - TB 8'],
+  9:  ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4','nama obat 5','jumlah obat 5','nama obat 6','jumlah obat 6',
+       'nama obat 7','jumlah obat 7','nama obat 8','jumlah obat 8','nama obat 9','jumlah obat 9',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 9','Merged Doc URL - TB 9','Link to merged Doc - TB 9','Document Merge Status - TB 9'],
+  10: ['Timestamp','email','nomor surat','bulan(angka romawi)','tahun','Nama pasien','Nama Puskesmas',
+       'nama obat 1','jumlah obat 1','nama obat 2','jumlah obat 2','nama obat 3','jumlah obat 3',
+       'nama obat 4','jumlah obat 4','nama obat 5','jumlah obat 5','nama obat 6','jumlah obat 6',
+       'nama obat 7','jumlah obat 7','nama obat 8','jumlah obat 8','nama obat 9','jumlah obat 9',
+       'nama obat 10','jumlah bat 10',
+       'Tanggal bulan tahun(cont: 1 januari 2023)',
+       'Merged Doc ID - TB 10','Merged Doc URL - TB 10','Link to merged Doc - TB 10','Document Merge Status - TB 10']
+};
+
+// ============================================================
+// doGet — test endpoint
+// ============================================================
+function doGet(e) {
+  return jsonOut({status: 'OK', message: 'TBMDR API aktif'});
+}
+
+// ============================================================
+// doPost — terima data dari HTML
+// ============================================================
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents)
+      return jsonOut({success:false, error:'No payload'});
+
+    const payload = JSON.parse(e.postData.contents);
+    if (payload.secret !== SECRET_KEY)
+      return jsonOut({success:false, error:'Unauthorized'});
+
+    // Validasi wajib (EMAIL DIHAPUS dari validasi)
+    const required = ['nomor_surat','bulan','tahun','nama_pasien','nama_puskesmas','jumlah_paket'];
+    for (const f of required) {
+      if (payload[f] === undefined || payload[f] === null || payload[f] === '')
+        return jsonOut({success:false, error:'Field wajib tidak lengkap: ' + f});
+    }
+
+    const jumlahPaket = parseInt(payload.jumlah_paket, 10);
+    if (!TB_HEADERS[jumlahPaket])
+      return jsonOut({success:false, error:'jumlah_paket harus 2-10'});
+
+    const sheetName = 'TB ' + jumlahPaket;
+    const headers   = TB_HEADERS[jumlahPaket];
+    const now       = new Date();
+    const BULAN_ID  = ['Januari','Februari','Maret','April','Mei','Juni',
+                       'Juli','Agustus','September','Oktober','November','Desember'];
+    const tglIndo   = now.getDate() + ' ' + BULAN_ID[now.getMonth()] + ' ' + now.getFullYear();
+
+    const obatList = Array.isArray(payload.obat) ? payload.obat : [];
+
+    const rowMap = {
+      'Timestamp'                                  : now,
+      'email'                                      : '', // dikosongkan (tidak lagi dari form)
+      'nomor surat'                                : payload.nomor_surat,
+      'bulan(angka romawi)'                        : String(payload.bulan).toUpperCase(),
+      'tahun'                                      : parseInt(payload.tahun, 10),
+      'Nama pasien'                                : payload.nama_pasien,
+      'Nama Puskesmas'                             : payload.nama_puskesmas,
+      'Tanggal bulan tahun(cont: 1 januari 2023)' : tglIndo
+    };
+
+    for (let i = 1; i <= jumlahPaket; i++) {
+      const item = obatList[i-1] || {};
+      rowMap['nama obat ' + i]   = item.nama   || '';
+      rowMap['jumlah obat ' + i] = parseNum(item.jumlah);
+    }
+    if (jumlahPaket === 10) {
+      rowMap['jumlah bat 10'] = parseNum((obatList[9]||{}).jumlah);
+    }
+
+    const row = headers.map(h => rowMap[h] !== undefined ? rowMap[h] : '');
+
+    // Tulis ke sheet
+    const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) throw new Error('Sheet tidak ditemukan: ' + sheetName);
+
+    // Cek duplikat nomor surat
+    const nomorCol = headers.indexOf('nomor surat') + 1;
+    if (nomorCol && sheet.getLastRow() > 1) {
+      const existing = sheet.getRange(2, nomorCol, sheet.getLastRow()-1, 1)
+                            .getValues().flat().map(String);
+      if (existing.includes(String(payload.nomor_surat)))
+        return jsonOut({success:false, error:'Nomor surat sudah ada di ' + sheetName});
+    }
+
+    sheet.appendRow(row);
+    SpreadsheetApp.flush();
+    const lastRow = sheet.getLastRow();
+
+    // Buat PDF + kirim email (opsional)
+    let pdfUrl = '';
+    try {
+      pdfUrl = generatePDFAndEmail_(sheetName, jumlahPaket, rowMap, lastRow, sheet, now);
+    } catch (err) {
+      Logger.log('PDF error: ' + err.message);
+      // tetap balas sukses, tetapi catat error
+      if (headers.indexOf('Document Merge Status - ' + sheetName) + 1) {
+        const staCol = headers.indexOf('Document Merge Status - ' + sheetName) + 1;
+        sheet.getRange(lastRow, staCol).setValue('PDF ERROR: ' + err.message);
+      }
+    }
+
+    return jsonOut({success:true, sheet:sheetName, row:lastRow, pdf_url:pdfUrl});
+
+  } catch (err) {
+    Logger.log('doPost error: ' + err);
+    return jsonOut({success:false, error: err.message});
+  }
+}
+
+// ============================================================
+// HELPER
+// ============================================================
+function parseNum(v) {
+  if (v === undefined || v === null || v === '') return '';
+  const n = parseFloat(String(v).replace(/[^\d.,]/g, '').replace(',', '.'));
+  return isNaN(n) ? v : n;
+}
+function jsonOut(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============================================================
+// GENERATOR PDF DENGAN KOP SURAT (via Header)
+// ============================================================
+function generatePDFAndEmail_(sheetName, jumlahPaket, rowMap, lastRow, sheet, now) {
+  const docName = 'TBMDR ' + rowMap['nomor surat'];
+  const doc  = DocumentApp.create(docName);
+  const body = doc.getBody();
+
+  // === KOP SURAT SEBAGAI HEADER (muncul di setiap halaman) ===
+  const header = doc.getHeader() || doc.addHeader();
+  header.clear();
+
+  // (a) Gambar kop di kiri atas, ukuran lebar penuh
+  if (KOP_IMAGE_FILE_ID && KOP_IMAGE_FILE_ID !== 'GANTI_ID_GAMBAR_KOP_DI_DRIVE') {
+    try {
+      const imgBlob = DriveApp.getFileById(KOP_IMAGE_FILE_ID).getBlob();
+      const img = header.appendImage(imgBlob);
+      // Sesuaikan lebar gambar ke lebar halaman (~500 pt untuk A4)
+      const pageW = body.getPageWidth() || 595; // pt A4
+      const margin = 72;
+      const targetW = pageW - margin * 2;
+      const ratio = targetW / img.getWidth();
+      img.setWidth(Math.round(targetW)).setHeight(Math.round(img.getHeight() * ratio));
+    } catch (err) {
+      Logger.log('Kop image error: ' + err.message);
+    }
+  }
+
+  // (b) Judul & subjudul (jika tidak pakai gambar kop)
+  header.appendParagraph(JUDUL_SURAT)
+        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+        .setBold(true).setFontSize(14).setSpacingAfter(0);
+  header.appendParagraph(SUBJUDUL)
+        .setAlignment(DocumentApp.HorizontalAlignment.CENTER)
+        .setBold(true).setFontSize(12).setSpacingAfter(4);
+
+  // (c) Garis pemisah — paragraf kosong dengan border bawah
+  const lineP = header.appendParagraph('');
+  lineP.setSpacingAfter(6);
+  // Google Doc API tidak punya border langsung; gunakan paragraf berisi garis bawah
+  // Alternatif: tabel 1 baris tanpa padding dengan border bawah tebal.
+  // Trik sederhana: gunakan karakter horizontal line "─" berulang.
+  lineP.setText('─'.repeat(80));
+  lineP.setFontSize(4).setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+
+  // === BODY ===
+  body.clear();
+
+  // Nomor surat & tanggal (rata kanan atau kiri — pilih kiri)
+  const meta = body.appendParagraph('');
+  meta.appendText('Nomor    : ' + rowMap['nomor surat'] + ' / TBMDR / ' +
+                  rowMap['bulan(angka romawi)'] + ' / ' + rowMap['tahun']).setFontSize(11);
+  meta.appendText('\nTanggal  : ' + rowMap['Tanggal bulan tahun(cont: 1 januari 2023)'])
+      .setFontSize(11);
+  meta.appendText('\nPasien   : ' + rowMap['Nama pasien']).setFontSize(11);
+  meta.appendText('\nPuskesmas: ' + rowMap['Nama Puskesmas']).setFontSize(11);
+  meta.setSpacingAfter(12);
+
+  body.appendParagraph('Dengan ini mengajukan permintaan obat TBMDR sebagai berikut:')
+      .setFontSize(11).setSpacingAfter(6);
+
+  // Tabel obat
+  const table = body.appendTable();
+  table.setBorderWidth(1);
+  const hdr = table.appendTableRow();
+  hdr.appendTableCell('No').setBold(true);
+  hdr.appendTableCell('Nama Obat').setBold(true);
+  hdr.appendTableCell('Jumlah').setBold(true);
+  // Atur lebar kolom
+  hdr.getCell(0).setWidth(40);
+  hdr.getCell(1).setWidth(300);
+  hdr.getCell(2).setWidth(90);
+
+  for (let i = 1; i <= jumlahPaket; i++) {
+    const nama = rowMap['nama obat ' + i] || '';
+    const jml  = rowMap['jumlah obat ' + i] || '';
+    if (!nama && jml === '') continue;
+    const r = table.appendTableRow();
+    r.appendTableCell(String(i));
+    r.appendTableCell(nama);
+    r.appendTableCell(jml === '' ? '-' : String(jml));
+  }
+
+  // Tanda tangan
+  body.appendParagraph('').setSpacingAfter(18);
+  const ttd = body.appendParagraph('');
+  ttd.setAlignment(DocumentApp.HorizontalAlignment.RIGHT);
+  ttd.appendText('Tenggarong, ' + rowMap['Tanggal bulan tahun(cont: 1 januari 2023)'] + '\n')
+     .setFontSize(11);
+  ttd.appendText('Petugas,\n\n\n\n').setFontSize(11);
+  ttd.appendText('(____________________)').setFontSize(11);
+
+  doc.saveAndClose();
+
+  // Konversi PDF
+  const docFile = DriveApp.getFileById(doc.getId());
+  const pdfBlob = docFile.getAs('application/pdf').setName(docName + '.pdf');
+  const folder  = DriveApp.getFolderById(FOLDER_ID);
+  const pdfFile = folder.createFile(pdfBlob);
+  const pdfUrl  = pdfFile.getUrl();
+  docFile.setTrashed(true);
+
+  // Kirim email (opsional, ke alamat tetap)
+  if (SEND_EMAIL && EMAIL_TO_FIXED) {
+    try {
+      MailApp.sendEmail({
+        to: EMAIL_TO_FIXED,
+        subject: 'Surat TBMDR ' + rowMap['nomor surat'],
+        htmlBody:
+          '<p>Terlampir surat TBMDR nomor <b>' + rowMap['nomor surat'] + '</b>.</p>' +
+          '<p>Pasien: ' + rowMap['Nama pasien'] + '<br>' +
+          'Puskesmas: ' + rowMap['Nama Puskesmas'] + '<br>' +
+          'Tanggal: ' + rowMap['Tanggal bulan tahun(cont: 1 januari 2023)'] + '</p>' +
+          '<p>Link PDF: <a href="' + pdfUrl + '">' + pdfUrl + '</a></p>',
+        attachments: [pdfFile.getAs(MimeType.PDF)]
+      });
+    } catch (mailErr) {
+      Logger.log('Mail error: ' + mailErr.message);
+    }
+  }
+
+  // Catat ke sheet
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const idCol  = headers.indexOf('Merged Doc ID - ' + sheetName) + 1;
+  const urlCol = headers.indexOf('Merged Doc URL - ' + sheetName) + 1;
+  const lnkCol = headers.indexOf('Link to merged Doc - ' + sheetName) + 1;
+  const staCol = headers.indexOf('Document Merge Status - ' + sheetName) + 1;
+
+  if (idCol)  sheet.getRange(lastRow, idCol).setValue(pdfFile.getId());
+  if (urlCol) sheet.getRange(lastRow, urlCol).setValue(pdfUrl);
+  if (lnkCol) sheet.getRange(lastRow, lnkCol)
+                   .setFormula('=HYPERLINK("' + pdfUrl + '","TBMDR ' +
+                                rowMap['nomor surat'] + '")');
+  if (staCol) sheet.getRange(lastRow, staCol).setValue(
+    'PDF created OK' + (SEND_EMAIL && EMAIL_TO_FIXED ? '; Email sent to ' + EMAIL_TO_FIXED : '') +
+    '; Timestamp: ' + now
+  );
+
+  return pdfUrl;
+}
