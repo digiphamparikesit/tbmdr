@@ -4,13 +4,11 @@ on:
   push:
     branches: [main]
 
-# WAJIB DITAMBAHKAN: Izin untuk menulis ke GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# WAJIB DITAMBAHKAN: Mencegah bentrok jika push bersamaan
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -39,11 +37,6 @@ jobs:
         with:
           path: '.'
           
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  # WAJIB DITAMBAHKAN: Job untuk men-deploy hasil build
   deploy:
     environment:
       name: github-pages
