@@ -20,16 +20,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-     - name: Generate config.js
+      - name: Generate config.js safely
         env:
           API_URL: ${{ secrets.TBMDR_API_URL }}
           SECRET_KEY: ${{ secrets.TBMDR_SECRET_KEY }}
         run: |
-          echo "window.TBMDR_CONFIG = {" > config.js
-          echo "  API_URL: '$API_URL'," >> config.js
-          echo "  SECRET_KEY: '$SECRET_KEY'" >> config.js
-          echo "};" >> config.js
-          
+          jq -n --arg url "$API_URL" --arg key "$SECRET_KEY" \
+            '{window: {TBMDR_CONFIG: {API_URL: $url, SECRET_KEY: $key}}}' > config.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
