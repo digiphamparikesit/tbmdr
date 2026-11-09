@@ -88,25 +88,12 @@
   </form>
 </div>
 
-<!-- Konfigurasi dipisah dari HTML -->
-<script src="./config.js?v=1"></script>
 <script>
 // ============================================================
-// AMBIL KONFIGURASI (dari config.js)
+// KONFIGURASI LANGSUNG (TANPA CONFIG.JS)
 // ============================================================
-const CFG = window.TBMDR_CONFIG || {};
-if (!CFG.API_URL || CFG.API_URL.includes('GANTI_DEPLOYMENT_ID')) {
-  document.body.innerHTML =
-    '<div style="max-width:600px;margin:80px auto;padding:24px;background:#fce8e6;' +
-    'color:#c5221f;border-radius:8px;font-family:sans-serif;">' +
-    '<b>Konfigurasi belum diisi.</b><br>' +
-    'Salin <code>config.example.js</code> menjadi <code>config.js</code> dan isi ' +
-    '<code>API_URL</code> serta <code>SECRET_KEY</code>.</div>';
-  throw new Error('Config missing');
-}
-
-const API_URL    = CFG.API_URL;
-const SECRET_KEY = CFG.SECRET_KEY;
+const API_URL    = 'https://script.google.com/macros/s/AKfycbwV94UQ4ulI2U7KAuSXN7z55tJIutyuEiuwjyvXecShFanOrdl-zvaIWYXv2EUR5AOD/exec';
+const SECRET_KEY = 'eC5XHr4fWth3y6IowWrtBW9ypnQQMZQaeY9rNu063ZDj0y3y';
 
 const container      = document.getElementById('obatContainer');
 const jumlahPaketSel = document.getElementById('jumlahPaket');
@@ -174,8 +161,10 @@ document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
   btn.disabled = true; btn.textContent = 'Mengirim...';
 
   try {
+    // Gunakan mode 'cors' eksplisit
     const res  = await fetch(API_URL, {
       method: 'POST',
+      mode: 'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     });
@@ -193,6 +182,7 @@ document.getElementById('formTbmdr').addEventListener('submit', async (e) => {
   } catch (err) {
     msg.className = 'msg err';
     msg.textContent = '❌ ' + err.message;
+    console.error(err);
   } finally {
     btn.disabled = false; btn.textContent = 'Kirim & Buat PDF';
   }
