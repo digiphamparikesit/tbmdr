@@ -74,19 +74,41 @@
   .btn-refresh { background: #34a853; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
   
   /* === PAGINATION STYLES === */
-  .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
-  .pagination button { padding: 8px 12px; border: 1px solid var(--border); background: #fff; cursor: pointer; border-radius: 4px; }
-  .pagination button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-  .pagination button:disabled { background: #f1f3f4; cursor: not-allowed; color: #999; }
-
-  @media (max-width: 768px) {
-    body { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; overflow-x: auto; padding: 0; }
-    .sidebar h2 { display: none; }
-    .sidebar a { padding: 15px; flex: 1; text-align: center; border-bottom: 3px solid transparent; border-left: none; }
-    .sidebar a.active { border-bottom-color: var(--primary); }
-    .grid, .grid-3 { grid-template-columns: 1fr; }
-    .filter-bar { flex-direction: column; align-items: stretch; position: relative; }
+  /* === PAGINATION STYLES === */
+  .pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .pagination-info {
+    font-size: 14px;
+    color: #5f6368;
+  }
+  .pagination-buttons {
+    display: flex;
+    gap: 8px;
+  }
+  .pagination-buttons button {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .pagination-buttons button:hover:not(:disabled) {
+    background: #f1f3f4;
+  }
+  .pagination-buttons button:disabled {
+    background: #f8f9fa;
+    color: #ccc;
+    cursor: not-allowed;
   }
 </style>
 </head>
@@ -222,7 +244,13 @@
     </table>
 
     <!-- Pagination Controls -->
-    <div class="pagination" id="pagination"></div>
+    <div class="pagination-container">
+      <div class="pagination-info" id="paginationInfo"></div>
+      <div class="pagination-buttons">
+        <button id="btnPrev" onclick="changePage(-1)">« Sebelumnya</button>
+        <button id="btnNext" onclick="changePage(1)">Selanjutnya »</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -491,34 +519,37 @@ function renderTable() {
 }
 
 function renderPagination(totalItems) {
-  const paginationDiv = document.getElementById('pagination');
-  paginationDiv.innerHTML = '';
+  const info = document.getElementById('paginationInfo');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
   
   const totalPages = Math.ceil(totalItems / rowsPerPage);
-  if (totalPages <= 1) return; // Sembunyikan jika hanya 1 halaman
-
-  // Tombol Previous
-  const btnPrev = document.createElement('button');
-  btnPrev.textContent = '«';
-  btnPrev.disabled = currentPage === 1;
-  btnPrev.onclick = () => { currentPage--; renderTable(); };
-  paginationDiv.appendChild(btnPrev);
-
-  // Tombol Angka
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i;
-    if (i === currentPage) btn.className = 'active';
-    btn.onclick = () => { currentPage = i; renderTable(); };
-    paginationDiv.appendChild(btn);
+  
+  if (totalItems === 0) {
+    info.textContent = "Tidak ada data";
+    btnPrev.disabled = true;
+    btnNext.disabled = true;
+    return;
   }
 
-  // Tombol Next
-  const btnNext = document.createElement('button');
-  btnNext.textContent = '»';
+  info.textContent = `Menampilkan ${((currentPage - 1) * rowsPerPage) + 1} - ${Math.min(currentPage * rowsPerPage, totalItems)} dari ${totalItems} data (Halaman ${currentPage} dari ${totalPages})`;
+  
+  btnPrev.disabled = currentPage === 1;
   btnNext.disabled = currentPage === totalPages;
-  btnNext.onclick = () => { currentPage++; renderTable(); };
-  paginationDiv.appendChild(btnNext);
+}
+
+function changePage(direction) {
+  const filtered = window.currentFilteredData || [];
+  const totalPages = Math.ceil(filtered.length / rowsPerPage);
+  const newPage = currentPage + direction;
+  
+  if (newPage >= 1 && newPage <= totalPages) {
+    currentPage = newPage;
+    renderTable();
+    
+    // Scroll ke atas tabel secara halus saat ganti halaman
+    document.querySelector('table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function gambarGrafik(dataArray) {
